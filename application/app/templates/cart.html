@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Корзина{% endblock %}
+{% block t1 %}Корзина{% endblock %}
+{% block content %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/cart.css' %}">
+<div class="space">
+    <div class="container">
+        <div class="container1">
+            <!-- Использование метода GET -->
+            <form method="GET" action="">
+                <label>Время начала:</label>
+                <input type="time" name="time_start" value="{{ request.GET.time_start|default:time_start }}">
+                <label>Дата:</label>
+                <input type="date" name="date" value="{{ request.GET.date|default:date }}">
+                <label>Название:</label>
+                <input type="text" name="event_name" value="{{ request.GET.event_name|default:event_name }}">
+                <label>ФИО:</label>
+                <input type="text" name="fio" value="{{ request.GET.fio|default:ФИО }}">
+                <input type="submit" value="Обновить">
+            </form>
+        </div>
+        {% for classroom in classrooms %}
+            {% include 'classroom_for_cart.html' with element=classroom %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

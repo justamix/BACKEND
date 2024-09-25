@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Бронирование аудиторий{% endblock %}
+{% block t1 %}Бронирование аудиторий{% endblock %}
+{% block content %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/classrooms.css' %}">
+<div class="space">
+    <div class="search-container">
+        <form action="" method="get">
+            {% csrf_token %}
+            <input name="адрес аудитории" placeholder="Поиск..." type="text" id="search-id" value={{ data.value }}>
+            <button class="find-button">Найти</button>
+            <a href="{% url 'cart_by_id' id=data.booking.id %}" class="cart-button">Корзина {{ data.len }}</a>
+        </form>
+    </div>
+        
+    <div class="container">
+        {% for classroom in data.classrooms %}
+            {% include 'classroom.html' with element=classroom %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

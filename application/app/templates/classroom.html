@@ -1,0 +1,12 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/classroom.css' %}">
+<div class="card">
+    <div class="info">
+        <img src="{{ element.image }}" class="image">
+        <p class="title">{{ element.name }}</p>
+        <p class="short-description">{{ element.short_description }}</p>
+    </div>
+    <div class="down">
+        <a href="{% url 'classroom_url' element.id %}" class="card-button">Подробнее</a>
+    </div>
+</div>  
