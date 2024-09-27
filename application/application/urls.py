@@ -20,7 +20,7 @@ from app import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.GetClassrooms),
-    path('cart/<int:id>/', views.GetCartById, name='cart_by_id'),  # Страница заявки с конкретным ID
+    path('', views.GetClassrooms1),
+    path('cart/<int:id>/', views.GetCartById, name='cart_by_id'), 
     path('classroom/<int:id>/', views.GetLongDescription, name='classroom_url'),
 ]

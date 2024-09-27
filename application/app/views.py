@@ -1,13 +1,9 @@
 from django.shortcuts import render
 from datetime import date
+from app.models import Classrooms
 
-def hello(request):
-    return render(request, 'index.html', { 'data' : {
-        'current_date': date.today(),
-        'list': ['python', 'django', 'html']
-    }})
 
-def GetInfo(id=None):
+def GetClassrooms(id=None):
     arr = [
         {
             'name': 'Зал заседаний', 
@@ -69,77 +65,86 @@ def GetInfo(id=None):
     return arr if id is None else arr[id-1]
 
 def GetBooking():
-    return {'id' : '1', 
-            'event_name' : 'Хакатон',
-            'ФИО' : 'Фролов Максим Кириллович',
-            'date' : '09-20-2024',
-            'time_start' : '13:00', 
-            'classrooms' : [{
-            'name': 'Зал заседаний', 
-            'image': 'http://127.0.0.1:9000/bmstulab/cr1.png', 
-            'short_description': 'УАК 1, 1.05', 
-            'time_end' : '19:00',
-            'id': '1',
-            'description': 'До 150 посадочных мест t Проектор, ноутбук (Linux, Р7 Офис) t Звуковое сопровождение'
-        },
-        {
-            'name': 'Переговорная', 
-            'image': 'http://127.0.0.1:9000/bmstulab/cr2.png', 
-            'short_description': 'УАК 1, 2.05',
-            'time_end' : '12:00',
-            'id': '2',
-            'description': 'До 15 посадочных мест t Система видеоконференцсвязи (ВКС) t Проектор, компьютер (Linux, Р7 Офис) t МФУ (А4/А3 цвет.)'
-        },
-        {
-            'name': 'Кабинет группы поддержки', 
-            'image': 'http://127.0.0.1:9000/bmstulab/cr3.png', 
-            'short_description': 'УАК 1, 3.11', 
-            'time_end' : '21:00',
-            'id': '3',
-            'description': '5 рабочих мест (Linux, Р7 Офис) t Веб-камеры, гарнитуры, колонки t МФУ (А4/А3 ч/б)'
-        },
-        {
-            'name': 'Лекционная аудитория', 
-            'image': 'http://127.0.0.1:9000/bmstulab/cr4.png', 
-            'short_description': 'УАК 2, 2.60', 
-            'time_end' : '19:00',
-            'id': '4',
-            'description': '40 посадочных мест t Проектор, компьютер (Linux, Р7 Офис)'
-        }]}
+    bookings = {
+        'bookings' : [
+            {
+                'id' : '1', 
+                'event_name' : 'Хакатон',
+                'ФИО' : 'Фролов Максим Кириллович',
+                'date' : '09.20.2024',
+                'time_start' : '13:00', 
+                'classrooms' : [
+                    {
+                        'info' : GetClassrooms(1),
+                        'time_end' : '14:00'    
+                    },
+                    {
+                        'info' : GetClassrooms(2),
+                        'time_end' : '15:00'
+                    },
+                    {
+                        'info' : GetClassrooms(3),
+                        'time_end' : '16:00'
+                    },
+                    {
+                        'info' : GetClassrooms(4),
+                        'time_end' : '17:00'
+                    }
+                ]
+            }
+        ]
+    }
+    return bookings
 
-def GetClassrooms(request):
+
+def GetClassrooms1(request):
     if request.method == 'GET':
         search_query = request.GET.get('адрес аудитории', '')
-        classrooms = GetInfo()
+        classrooms = GetClassrooms()
+        booking_data = GetBooking()  # Получаем данные заявки
+        first_booking_id = booking_data['bookings'][0]['id'] if booking_data['bookings'] else None  # Проверяем наличие заявок
+
         if search_query:
             classrooms = list(filter(lambda x: search_query.lower() in x['short_description'].lower(), classrooms))
+        
         return render(request, 'classrooms.html', {
             'data': {
                 'classrooms': classrooms,
-                'booking': GetBooking(),
-                'booking_counter': 0,
+                'booking': booking_data,
+                'first_booking_id': first_booking_id,  # Добавляем первый ID заявки в контекст
+                'booking_counter': len(booking_data['bookings']),
                 'value': search_query,
-                'len': len(GetBooking()['classrooms'])
+                'len': len(booking_data['bookings'][0]['classrooms']) if first_booking_id else 0
             }
         })
-
 def GetCartById(request, id):
     booking = GetBooking()
-    event_name = request.GET.get('event_name', booking['event_name'])
-    fio = request.GET.get('fio', booking['ФИО'])
-    time_start = request.GET.get('time_start', booking['time_start'])
-    date_value = request.GET.get('date', booking['date'])
+    current_booking = None
+
+    for b in booking['bookings']:
+        if b['id'] == str(id):
+            current_booking = b
+            break
+
+    event_name = request.GET.get('event_name', current_booking['event_name'])
+    fio = request.GET.get('fio', current_booking['ФИО'])
+    time_start = request.GET.get('time_start', current_booking['time_start'])
+    date_value = request.GET.get('date', current_booking['date'])
+
     context = {
         'id': id,
         'event_name': event_name,
         'ФИО': fio,
         'date': date_value,
         'time_start': time_start,
-        'classrooms': booking['classrooms']
+        'classrooms': current_booking['classrooms']  # Аудитории в рамках текущей заявки
     }
-    
+
     return render(request, 'cart.html', context)
+
 def GetLongDescription(request, id):
-    a = {'data': GetInfo(id)}
+    a = {
+        'data' : GetClassrooms(id)
+        }
     a['data']['description'] = a['data']['description'].split('t')
     return render(request, 'long_description.html', a)

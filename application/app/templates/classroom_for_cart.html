@@ -2,13 +2,13 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/classroom_for_cart.css' %}">
 <div class="card">
     <div class="down">
-        <img src="{{ element.image }}" class="image">
-        <a class="title">{{ element.name }}</a>
+        <img src="{{ element.info.image }}" class="image">
+        <a class="title">{{ element.info.name }}</a>
 
         <!-- Поле ввода для времени окончания -->
         <label>до</label>
         <input type="time" name="time_end" value="{{ request.GET.time_end|default:element.time_end }}">
 
-        <a href="{% url 'classroom_url' element.id %}" class="card-button">Подробнее</a>
+        <a href="{% url 'classroom_url' element.info.id %}" class="card-button">Подробнее</a>
     </div>
 </div>

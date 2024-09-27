@@ -8,13 +8,17 @@
     <div class="search-container">
         <form action="" method="get">
             {% csrf_token %}
-            <input name="адрес аудитории" placeholder="Поиск..." type="text" id="search-id" value={{ data.value }}>
+            <input name="адрес аудитории" placeholder="Поиск..." type="text" id="search-id" value="{{ data.value }}">
             <button class="find-button">Найти</button>
-            <a href="{% url 'cart_by_id' id=data.booking.id %}" class="cart-button">Корзина {{ data.len }}</a>
+            <!-- Корзина с проверкой наличия id первой заявки -->
+            <a href="{% url 'cart_by_id' id=data.first_booking_id %}" class="cart-button">
+                Корзина {{ data.len }}
+            </a>
         </form>
     </div>
-        
+
     <div class="container">
+        <!-- Отображаем список аудиторий -->
         {% for classroom in data.classrooms %}
             {% include 'classroom.html' with element=classroom %}
         {% endfor %}
