@@ -2,11 +2,12 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/classroom.css' %}">
 <div class="card">
     <div class="info">
-        <img src="{{ element.image }}" class="image">
+        <img src="{{ element.url }}" class="image">
         <p class="title">{{ element.name }}</p>
-        <p class="short-description">{{ element.short_description }}</p>
+        <p class="short-description">{{ element.address }}</p>
     </div>
     <div class="down">
-        <a href="{% url 'classroom_url' element.id %}" class="card-button">Подробнее</a>
+        <a href="{% url 'classroom_url' element.classroom_id %}" class="card-button">Подробнее</a>
+        <a href="" class="card-add">+</a>
     </div>
 </div>  

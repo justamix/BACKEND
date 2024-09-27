@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}{{ data.name }}{% endblock %}
+{% block title %}{{ classroom.name }}{% endblock %}
 {% block t1 %}Подробное описание аудитории{% endblock %}
 {% block content %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/long_description.css' %}">
 <div class="space">
     <div class="classroom">
-        <img src="{{ data.image }}" class="image">
+        <img src="{{ classroom.url }}" class="image">
         <div class="info">
-            <p class="title">{{ data.name }}</p>
+            <p class="title">{{ classroom.name }}</p>
             <div class="address">
                 <span><b>АДРЕС:</b></span>
-                <span>{{ data.short_description }}</span>
+                <span>{{ classroom.address }}</span>
             </div>
             <ul>
-                {% for line in data.description %}
+                {% for line in classroom.description %}
                 <li>{{ line }}</li>
                 {% endfor %}
             </ul>
