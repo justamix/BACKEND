@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.contrib.auth.models import User
 
 class ApplicationClassrooms(models.Model):
     mm_id = models.AutoField(primary_key=True)
@@ -29,13 +29,7 @@ class Applications(models.Model):
         db_table = 'applications'
 
     def GetClassrooms(self):
-        arr = []
-        for item in ApplicationClassrooms.objects.filter(app_id=self):
-            a = item.classroom_id
-            a.finish_time = item.finish_time
-            arr.append(a)
-
-        return arr
+        return ApplicationClassrooms.objects.filter(app=self).values_list('classroom', flat=True)
 
 
 class Classrooms(models.Model):

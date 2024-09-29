@@ -8,6 +8,9 @@
     </div>
     <div class="down">
         <a href="{% url 'classroom_url' element.classroom_id %}" class="card-button">Подробнее</a>
-        <a href="" class="card-add">+</a>
+        <form method="post" action="/classroom/{{ element.classroom_id }}/add_to_draft/">
+            {% csrf_token %}
+                    <button type="submit" class="card-add">+</button>
+        </form>
     </div>
 </div>  
