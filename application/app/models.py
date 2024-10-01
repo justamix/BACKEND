@@ -8,11 +8,15 @@ class ApplicationClassrooms(models.Model):
     finish_time = models.TimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'application_classrooms'
 
 
 class Applications(models.Model):
+    STATUS_CHOICES = (
+        (1, 'Действует'),
+        (2, 'Удалена'),
+    )
     app_id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(blank=True, null=True)
     submitted_at = models.DateTimeField(blank=True, null=True)
@@ -22,10 +26,10 @@ class Applications(models.Model):
     event_date = models.DateTimeField(blank=True, null=True)
     event_name = models.CharField(max_length=100, blank=True, null=True)
     start_event_time = models.TimeField(blank=True, null=True)
-    status = models.CharField(max_length=100, default='черновик',blank=True, null=True)
+    status = models.IntegerField(choices=STATUS_CHOICES, default=1,blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'applications'
 
     def GetClassrooms(self):
@@ -42,5 +46,5 @@ class Classrooms(models.Model):
     status = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'classrooms'

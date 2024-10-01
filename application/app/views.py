@@ -97,7 +97,7 @@ def GetLongDescription(request, id):
 def GetDraftBooking():
     """ПОЛУЧЕНИЕ ЧЕРНОВИКА ЗАЯВКИ"""
     current_user = GetCurrentUser()
-    return Applications.objects.filter(creator=current_user.id, status='черновик').first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
+    return Applications.objects.filter(creator=current_user.id, status=1).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
 
 def GetCurrentUser():
     """ВЫБОР ПОЛЬЗОВАТЕЛЯ"""
@@ -111,7 +111,7 @@ def AddClassroomToDraftBooking(request, classroom_id):
         draft_booking = Applications.objects.create(
             created_at=timezone.now(),
             creator=GetCurrentUser().id,  # или как вы получаете текущего пользователя
-            status='черновик'
+            status=1
         )
         draft_booking.save()
     # Проверяем, есть ли уже эта аудитория в черновике
@@ -128,6 +128,6 @@ def DeleteBooking(request, booking_id):
     """УДАЛЕНИЕ ЧЕРНОВИКА БРОНИРОВАНИЯ"""
     if request.method == "POST": 
         with connection.cursor() as cursor:
-            cursor.execute("UPDATE Applications SET status = 'удален' WHERE app_id = %s", [booking_id])
+            cursor.execute("UPDATE Applications SET status = 2 WHERE app_id = %s", [booking_id])
 
     return redirect("/")
