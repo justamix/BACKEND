@@ -1,11 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
-
+from datetime import datetime, time
 class ApplicationClassrooms(models.Model):
     mm_id = models.AutoField(primary_key=True)
     classroom = models.ForeignKey('Classrooms', models.DO_NOTHING, blank=True, null=True)
     app = models.ForeignKey('Applications', models.DO_NOTHING, blank=True, null=True)
-    finish_time = models.TimeField(blank=True, null=True)
+    finish_time = models.TimeField(default=time(19, 0), blank=True, null=True)
 
     class Meta:
         managed = True
@@ -23,9 +23,9 @@ class Applications(models.Model):
     completed_at = models.DateTimeField(blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_applications',blank=True, null=True)
     moderator = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='moderated_applications',blank=True, null=True)
-    event_date = models.DateTimeField(blank=True, null=True)
-    event_name = models.CharField(max_length=100, blank=True, null=True)
-    start_event_time = models.TimeField(blank=True, null=True)
+    event_date = models.DateTimeField(default=datetime(2024, 12, 12, 0, 0), blank=True, null=True)
+    event_name = models.CharField(default='конференция', max_length=100, blank=True, null=True)
+    start_event_time = models.TimeField(default=time(12, 0), blank=True, null=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=1,blank=True, null=True)
 
     class Meta:

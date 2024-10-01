@@ -3,7 +3,7 @@ from app.models import Classrooms, Applications, ApplicationClassrooms
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db import connection
-
+from datetime import datetime
 
 def GetClassrooms1(request):
     """АУДИТОРИИ"""
@@ -35,55 +35,21 @@ def GetBooking():
     for item in application_classrooms:
         classroom = {
             'info': Classrooms.objects.get(classroom_id=item.classroom_id),  # Получаем объект аудитории
-            'finish_time': item.finish_time                                     # Время окончания
+            'finish_time': item.finish_time.strftime('%H:%M') if item.finish_time else ''# Время окончания
         }
         classrooms.append(classroom)
     return classrooms
 
-# def GetCartById(request, id):
-#     booking = GetBooking()
-#     current_booking = None
-
-#     for b in booking:
-#         if b['id'] == str(id):
-#             current_booking = b
-#             break
-
-#     event_name = request.GET.get('event_name', current_booking['event_name'])
-#     fio = request.GET.get('fio', current_booking['ФИО'])
-#     time_start = request.GET.get('time_start', current_booking['time_start'])
-#     date_value = request.GET.get('date', current_booking['date'])
-
-#     context = {
-#         'id': id,
-#         'event_name': event_name,
-#         'ФИО': fio,
-#         'date': date_value,
-#         'time_start': time_start,
-#         'classrooms': current_booking['classrooms']  # Аудитории в рамках текущей заявки
-#     }
-
-#     return render(request, 'cart.html', context)
-
 def GetCartById(request, id):
+    """СТРАНИЦА КОРЗИНЫ"""
     draft_booking = GetDraftBooking()
-    if request.GET.get('time_start') and request.GET.get('date') and request.GET.get('event_name') and request.GET.get('fio'):
-        draft_booking.start_event_time = request.GET.get('time_start')
-        draft_booking.event_date = request.GET.get('date')
-        draft_booking.event_name = request.GET.get('event_name')
-        draft_booking.creator = request.GET.get('fio')
-
-        draft_booking.save()
-
-    # Отображаем данные на странице
-    classrooms = GetBooking()
     context = {
         'id': id,
         'event_name': draft_booking.event_name,
-        'fio': draft_booking.creator,
-        'date': draft_booking.event_date,
-        'time_start': draft_booking.start_event_time,
-        'classrooms': classrooms  # Аудитории в рамках текущей заявки
+        'fio': draft_booking.creator.username,
+        'date': draft_booking.event_date.strftime('%Y-%m-%d') if draft_booking.event_date else '',
+        'time_start': draft_booking.start_event_time.strftime('%H:%M') if draft_booking.start_event_time else '',
+        'classrooms': GetBooking()
     }
 
     return render(request, 'cart.html', context)
@@ -110,14 +76,12 @@ def AddClassroomToDraftBooking(request, classroom_id):
     if draft_booking is None:
         draft_booking = Applications.objects.create(
             created_at=timezone.now(),
-            creator=GetCurrentUser(),  # или как вы получаете текущего пользователя
+            creator=GetCurrentUser(),
             status=1
         )
         draft_booking.save()
-    # Проверяем, есть ли уже эта аудитория в черновике
     if ApplicationClassrooms.objects.filter(app=draft_booking, classroom=classroom).exists():
         return redirect("/")
-    # добавляем, если не существует
     ApplicationClassrooms.objects.create( 
         app=draft_booking,
         classroom=classroom
