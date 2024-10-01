@@ -110,7 +110,7 @@ def AddClassroomToDraftBooking(request, classroom_id):
     if draft_booking is None:
         draft_booking = Applications.objects.create(
             created_at=timezone.now(),
-            creator=GetCurrentUser().id,  # или как вы получаете текущего пользователя
+            creator=GetCurrentUser(),  # или как вы получаете текущего пользователя
             status=1
         )
         draft_booking.save()
