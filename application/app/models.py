@@ -11,6 +11,9 @@ class ApplicationClassrooms(models.Model):
     class Meta:
         managed = True
         db_table = 'application_classrooms'
+        constraints = [
+            models.UniqueConstraint(fields=['classroom', 'app'], name='unique_ApplicationClassrooms')
+        ]
 
 
 class Applications(models.Model):

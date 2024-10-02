@@ -3,7 +3,6 @@ from app.models import Classrooms, Applications, ApplicationClassrooms
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db import connection
-from datetime import datetime
 
 def GetClassrooms1(request):
     """АУДИТОРИИ"""
@@ -26,9 +25,9 @@ def GetClassrooms1(request):
 
     return render(request, 'classrooms.html', context)
 
-def GetBooking():
+def GetBooking(id):
     """Информация об аудиториях в бронировании"""
-    draft_booking = GetDraftBooking()
+    draft_booking = GetDraftBooking(id)
     # Получаем все аудитории, связанные с черновиком заявки
     application_classrooms = ApplicationClassrooms.objects.filter(app=draft_booking)
     classrooms = []
@@ -42,14 +41,15 @@ def GetBooking():
 
 def GetCartById(request, id):
     """СТРАНИЦА КОРЗИНЫ"""
-    draft_booking = GetDraftBooking()
+    draft_booking = GetDraftBooking(id)
     context = {
         'id': id,
         'event_name': draft_booking.event_name,
         'fio': draft_booking.creator.username,
         'date': draft_booking.event_date.strftime('%Y-%m-%d') if draft_booking.event_date else '',
         'time_start': draft_booking.start_event_time.strftime('%H:%M') if draft_booking.start_event_time else '',
-        'classrooms': GetBooking()
+        'classrooms': GetBooking(id),
+        'status': draft_booking.status
     }
 
     return render(request, 'cart.html', context)
@@ -60,11 +60,13 @@ def GetLongDescription(request, id):
     classroom.description = classroom.description.split('t')  
     return render(request, 'long_description.html', { 'classroom' : classroom })
 
-def GetDraftBooking():
+def GetDraftBooking(id=None):
     """ПОЛУЧЕНИЕ ЧЕРНОВИКА ЗАЯВКИ"""
     current_user = GetCurrentUser()
-    return Applications.objects.filter(creator=current_user.id, status=1).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
-
+    if id is not None:
+        return Applications.objects.filter(creator=current_user.id, app_id=id).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
+    else:
+        return Applications.objects.filter(creator=current_user.id, status=1).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
 def GetCurrentUser():
     """ВЫБОР ПОЛЬЗОВАТЕЛЯ"""
     return User.objects.filter(is_superuser=False).first()
