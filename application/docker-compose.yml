@@ -20,10 +20,10 @@ services:
 
   pgdb:
     # Использование готового образа postgres
-    image: postgres
+    image: postgres:16
     # Задание переменных окружения для контейнера с postgres
     environment:
-      - POSTGRES_DB=bookingclassrooms
+      - POSTGRES_DB=bookingclassroom
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
      # Задание имени контейнера для сервиса pgdb

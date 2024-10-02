@@ -91,7 +91,10 @@ def AddClassroomToDraftBooking(request, classroom_id):
 def DeleteBooking(request, booking_id):
     """УДАЛЕНИЕ ЧЕРНОВИКА БРОНИРОВАНИЯ"""
     if request.method == "POST": 
+        submitted_time = timezone.now()
         with connection.cursor() as cursor:
-            cursor.execute("UPDATE Applications SET status = 2 WHERE app_id = %s", [booking_id])
-
+            cursor.execute(
+                "UPDATE Applications SET status = 2, submitted_at = %s WHERE app_id = %s",
+                [submitted_time, booking_id]
+            )
     return redirect("/")
