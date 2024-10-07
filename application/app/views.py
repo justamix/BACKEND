@@ -39,7 +39,7 @@ def GetBooking(id):
         classrooms.append(classroom)
     return classrooms
 
-def GetCartById(request, id):
+def GetEventById(request, id):
     """СТРАНИЦА КОРЗИНЫ"""
     draft_booking = GetDraftBooking(id)
     context = {
@@ -52,7 +52,7 @@ def GetCartById(request, id):
         'status': draft_booking.status
     }
 
-    return render(request, 'cart.html', context)
+    return render(request, 'event.html', context)
 
 def GetLongDescription(request, id):
     """ПОДРОБНОЕ ОПИСАНИЕ"""

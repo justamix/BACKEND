@@ -12,7 +12,7 @@
             <button class="find-button">Найти</button>
             <!-- Корзина с проверкой наличия id первой заявки -->
             {% if draft_booking and draft_booking.app_id %}
-            <a href="{% url 'cart_by_id' id=draft_booking.app_id %}" class="cart-button">
+            <a href="{% url 'event_by_id' id=draft_booking.app_id %}" class="cart-button">
                 Корзина {{ len }}
             </a>
             {% else %}

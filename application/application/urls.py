@@ -21,8 +21,8 @@ from app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.GetClassrooms1),
-    path('cart/<int:id>/', views.GetCartById, name='cart_by_id'), 
+    path('event/<int:id>/', views.GetEventById, name='event_by_id'), 
     path('classroom/<int:id>/', views.GetLongDescription, name='classroom_url'),
     path('classroom/<int:classroom_id>/add_to_draft/', views.AddClassroomToDraftBooking),
-    path('cart/<int:booking_id>/delete/', views.DeleteBooking),
+    path('event/<int:booking_id>/delete/', views.DeleteBooking),
 ]

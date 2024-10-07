@@ -13,7 +13,7 @@
 
 {% block content %}
 {% if status == 1 %}
-    <link rel="stylesheet" type="text/css" href="{% static 'css/cart.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/event.css' %}">
     <div class="space">
         <div class="container">
             <div class="container1">
@@ -32,9 +32,9 @@
                 </form>
             </div>
             {% for classroom in classrooms %}
-                    {% include 'classroom_for_cart.html' with element=classroom %}
+                    {% include 'classroom_for_event.html' with element=classroom %}
             {% endfor %}
-            <form method="post" action="/cart/{{ id }}/delete/">
+            <form method="post" action="/event/{{ id }}/delete/">
                 {% csrf_token %}
                 <button type="submit" class="card-add">УДАЛИТЬ БРОНИРОВАНИЕ</button>
             </form>
