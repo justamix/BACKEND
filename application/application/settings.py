@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'application.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',   # Используется PostgreSQL
-        'NAME': 'bookingclassrooms', # Имя базы данных
+        'NAME': 'bookingclassroom', # Имя базы данных
         'USER': 'postgres', # Имя пользователя
         'PASSWORD': 'postgres', # Пароль пользователя
         'HOST': 'pgdb', # Наименование контейнера для базы данных в Docker Compose

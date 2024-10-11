@@ -37,12 +37,12 @@ def GetBooking(id):
 @api_view(["GET"])
 def search_classrooms(request):
     query = request.GET.get("адрес аудитории", "")
-    classrooms = Classrooms.objects.filter(status=1).filter(name__icontains=query)
+    classrooms = Classrooms.objects.filter(status='active', name__icontains=query)
     serializer = ClassroomsSerializer(classrooms, many=True)
-    draft_booking = GetDraftBooking()
+    draft = GetDraftBooking()
     response = {
-        "classrooms": serializer.data,
-        "draft_booking": draft_booking.app_id if draft_booking else None
+        "classrooms" : serializer.data,
+        "draft_event" : draft.app_id if draft else None
     }
     return Response(response)
 #2
@@ -54,29 +54,67 @@ def get_classroom_by_id(request, classroom_id):
     serializer = ClassroomsSerializer(classroom, many=False)
     return Response(serializer.data)
 #3
-@api_view(["GET"])
-def get_classroom_image(request, classroom_id):
-    if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    classroom = Classrooms.objects.get(classroom_id=classroom_id)
-    response = requests.get(classroom.url.replace("localhost", "minio"))
-    return HttpResponse(response, content_type="image/png")
+@api_view(["POST"])
+def create_classroom(request):
+    Classrooms.objects.create()
+    classrooms = Classrooms.objects.filter(status='active')
+    serializer = ClassroomsSerializer(classrooms, many=True)
+    return Response(serializer.data)
 #4
 @api_view(["PUT"])
 def update_classroom(request, classroom_id):
     if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     classroom = Classrooms.objects.get(classroom_id=classroom_id)
-    image = request.data.get("image")
-    if image is not None:
-        classroom.url = image
+    name = request.data.get("name")
+    if name is not None:
+        classroom.name = name
+        classroom.save()
+    address = request.data.get("address")
+    if address is not None:
+        classroom.address = address
+        classroom.save()
+    description = request.data.get("description")
+    if description is not None:
+        classroom.description = description
         classroom.save()
     serializer = ClassroomsSerializer(classroom, data=request.data, many=False, partial=True)
     if serializer.is_valid():
         serializer.save()
     return Response(serializer.data)
 #5
-@api_view(["PUT"])
+@api_view(["DELETE"])
+def delete_classroom(request, classroom_id):
+    if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    classroom = Classrooms.objects.get(classroom_id=classroom_id)
+    classroom.status = 'inactive'
+    classroom.save()
+    classrooms = Classrooms.objects.filter(status='active')
+    serializer = ClassroomsSerializer(classrooms, many=True)
+    return Response(serializer.data)
+#6
+@api_view(["POST"])
+def add_classroom_to_event(request, classroom_id):
+    if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    classroom = Classrooms.objects.get(classroom_id=classroom_id)
+    draft_booking = GetDraftBooking()
+    if draft_booking is None:
+        draft_booking = Applications.objects.create()
+        draft_booking.creator = GetUser()
+        draft_booking.created_at = timezone.now()
+        draft_booking.save()
+    if ApplicationClassrooms.objects.filter(app=draft_booking, classroom=classroom).exists():
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    item = ApplicationClassrooms.objects.create()
+    item.app = draft_booking
+    item.classroom = classroom
+    item.save()
+    serializer =ApplicationsSerializer(draft_booking, many=False)
+    return Response(serializer.data["classrooms"])
+#7
+@api_view(["POST"])
 def update_classroom_image(request, classroom_id):
     if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
@@ -87,51 +125,8 @@ def update_classroom_image(request, classroom_id):
         classroom.save()
     serializer = ClassroomsSerializer(classroom)
     return Response(serializer.data)
-#6
-@api_view(["DELETE"])
-def delete_classroom(request, classroom_id):
-    if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    classroom = Classrooms.objects.get(classroom_id=classroom_id)
-    classroom.status = 2
-    classroom.save()
-    classrooms = Classrooms.objects.filter(status=1)
-    serializer = ClassroomsSerializer(classrooms, many=True)
-    return Response(serializer.data)
-#7
-@api_view(["POST"])
-def create_classroom(request):
-    Classrooms.objects.create()
-    classrooms = Classrooms.objects.filter(status=1)
-    serializer = ClassroomsSerializer(classrooms, many=True)
-    return Response(serializer.data)
 #8
-@api_view(["POST"])
-def add_classroom_to_event(request, classroom_id):
-    if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    
-    classroom = Classrooms.objects.get(classroom_id=classroom_id)
 
-    draft_booking = GetDraftBooking()
-
-    if draft_booking is None:
-        draft_booking =Applications.objects.create()
-        draft_booking.creator = GetUser()
-        draft_booking.created_at = timezone.now()
-        draft_booking.save()
-
-    if ApplicationClassrooms.objects.filter(app=draft_booking, classroom=classroom).exists():
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    
-    item = ApplicationClassrooms.objects.create()
-    item.app = draft_booking
-    item.classroom = classroom
-    item.save()
-
-    serializer =ApplicationsSerializer(draft_booking, many=False)
-
-    return Response(serializer.data["classrooms"])
 #9
 
 #10

@@ -47,7 +47,7 @@ class Classrooms(models.Model):
     url = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=300, blank=True, null=True)
     photo = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=100, blank=True, default='active')
 
     class Meta:
         managed = True
