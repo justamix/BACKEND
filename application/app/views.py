@@ -64,9 +64,9 @@ def GetDraftBooking(id=None):
     """ПОЛУЧЕНИЕ ЧЕРНОВИКА ЗАЯВКИ"""
     current_user = GetCurrentUser()
     if id is not None:
-        return Applications.objects.filter(creator=current_user.id, app_id=id).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
+        return Applications.objects.filter(creator=current_user, app_id=id).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
     else:
-        return Applications.objects.filter(creator=current_user.id, status=1).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
+        return Applications.objects.filter(creator=current_user, status=1).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
 def GetCurrentUser():
     """ВЫБОР ПОЛЬЗОВАТЕЛЯ"""
     return User.objects.filter(is_superuser=False).first()
