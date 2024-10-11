@@ -7,8 +7,8 @@ class ApplicationsSerializer(serializers.ModelSerializer):
     moderator = serializers.SerializerMethodField()
     classrooms = serializers.SerializerMethodField()
 
-    def get_creator(self, application):
-        return application.creator.username
+    def get_creator(self, obj):
+        return obj.creator.username
     
     def get_moderator(self, application):
         if application.moderator:

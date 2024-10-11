@@ -128,11 +128,49 @@ def update_classroom_image(request, classroom_id):
 #8
 
 #9
-
+@api_view(["GET"])  
+def get_event_by_id(request, event_id):
+    if not Applications.objects.filter(app_id=event_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    app = Applications.objects.get(app_id=event_id)
+    serializer = ApplicationsSerializer(app, many=False)
+    return Response(serializer.data)
 #10
-
+@api_view(["PUT"])
+def update_event_by_id(request, event_id):
+    if not Applications.objects.filter(app_id=event_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    app = Applications.objects.get(app_id=event_id)
+    event_date = request.GET.get("event_date")
+    if event_date is not None:
+        app.event_date = event_date
+        app.save()
+    event_name = request.GET.get("event_name")
+    if event_name is not None:
+        app.event_name = event_name
+        app.save()
+    start_event_time = request.GET.get("start_event_time")
+    if start_event_time is not None:
+        app.start_event_time = start_event_time
+        app.save()
+    serializer = ApplicationsSerializer(app, data=request.data, many=False, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+    return Response(serializer.data)
 #11
-
+@api_view(["PUT"])
+def update_status_user(request, event_id):
+    if not Applications.objects.filter(app_id=event_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    app = Applications.objects.get(app_id=event_id)
+    if app.status == 1:
+        app.status = 2
+        app.submitted_at = timezone.now()
+        app.save()
+        serializer = ApplicationsSerializer(app, many=False)
+        return Response(serializer.data)
+    else:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 #12
 
 #13
