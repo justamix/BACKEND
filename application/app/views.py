@@ -126,7 +126,24 @@ def update_classroom_image(request, classroom_id):
     serializer = ClassroomsSerializer(classroom)
     return Response(serializer.data)
 #8
+@api_view(["GET"])
+def events_list(request):
+    status = int(request.GET.get("status", 0))
+    date_formation_start = request.GET.get("date_formation_start")
+    date_formation_end = request.GET.get("date_formation_end")
 
+    apps = Applications.objects.all()
+
+    if date_formation_start and parse_datetime(date_formation_start):
+        apps = apps.filter(created_at__gte=parse_datetime(date_formation_start))
+
+    if date_formation_end and parse_datetime(date_formation_end):
+        apps = apps.filter(created_at__lt=parse_datetime(date_formation_end))
+
+    serializer = ApplicationsSerializer(apps, many=True)
+    
+
+    return Response(serializer.data)
 #9
 @api_view(["GET"])  
 def get_event_by_id(request, event_id):
@@ -141,15 +158,15 @@ def update_event_by_id(request, event_id):
     if not Applications.objects.filter(app_id=event_id).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     app = Applications.objects.get(app_id=event_id)
-    event_date = request.GET.get("event_date")
+    event_date = request.data.get("event_date")
     if event_date is not None:
         app.event_date = event_date
         app.save()
-    event_name = request.GET.get("event_name")
+    event_name = request.data.get("event_name")
     if event_name is not None:
         app.event_name = event_name
         app.save()
-    start_event_time = request.GET.get("start_event_time")
+    start_event_time = request.data.get("start_event_time")
     if start_event_time is not None:
         app.start_event_time = start_event_time
         app.save()
@@ -172,95 +189,94 @@ def update_status_user(request, event_id):
     else:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 #12
-
+@api_view(["PUT"])
+def update_status_admin(request, event_id):
+    if not Applications.objects.filter(app_id=event_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    stat = request.data["status"]
+    if stat not in [3, 4]:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    app = Applications.objects.get(app_id=event_id)
+    if app.status == 2:
+        app.completed_at = timezone.now()
+        app.status = stat
+        app.moderator = get_moderator()
+        app.save()
+        serializer = ApplicationsSerializer(app, many=False)
+        return Response(serializer.data)
+    else: 
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 #13
-
+@api_view(["DELETE"])
+def delete_event(request, event_id):
+    if not Applications.objects.filter(app_id=event_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    app = Applications.objects.get(app_id=event_id)
+    if app.status != 1:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    app.status = 5
+    app.submitted_at = timezone.now()
+    app.save()
+    serializer = ApplicationsSerializer(app, many=False)
+    return Response(serializer.data)
 #14
-
+@api_view(["PUT"])
+def update_classroom_in_event(request, event_id, classroom_id):
+    if not ApplicationClassrooms.objects.filter(app_id=event_id, classroom_id=classroom_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    item = ApplicationClassrooms.objects.get(app_id=event_id, classroom_id=classroom_id)
+    finish_time = request.data.get("finish_time")
+    if finish_time:
+        try:
+            parsed_time = timezone.datetime.strptime(finish_time, '%H:%M').time()
+            item.finish_time = parsed_time
+        except ValueError:
+            return Response({"error": "Invalid time format. Use 'HH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
+    serializer = ApplicationClassroomsSerializer(item, data=request.data, many=False, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 #15
-
+@api_view(["DELETE"])
+def delete_classroom_from_event(request, event_id, classroom_id):
+    if not ApplicationClassrooms.objects.filter(app_id=event_id, classroom_id=classroom_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    item = ApplicationClassrooms.objects.get(app_id=event_id, classroom_id=classroom_id)
+    item.delete()
+    app = Applications.objects.get(app_id=event_id)
+    serializer = ApplicationsSerializer(app, many=False)
+    classrooms = serializer.data["classrooms"]
+    if not len(classrooms):
+        app.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(classrooms)
 #16
+@api_view(["PUT"])
+def update_user(request, user_id):
+    if not User.objects.filter(pk=user_id).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
+    user = User.objects.get(pk=user_id)
+    serializer = UserSerializer(user, data=request.data, many=False, partial=True)
+
+    if not serializer.is_valid():
+        return Response(status=status.HTTP_409_CONFLICT)
+
+    serializer.save()
+
+    return Response(serializer.data)
 #17
+@api_view(["POST"])
+def register(request):
+    serializer = UserRegisterSerializer(data=request.data)
 
-#18
+    if not serializer.is_valid():
+        return Response(status=status.HTTP_409_CONFLICT)
 
-#19
+    user = serializer.save()
 
+    serializer = UserSerializer(user)
 
-
-# def GetClassrooms1(request):
-#     """АУДИТОРИИ"""
-#     #обработка поиска
-#     search_address = request.GET.get('адрес аудитории', '')
-#     classrooms = Classrooms.objects.filter(address__icontains=search_address, status='active')
-
-#     #словарь с данными
-#     context = {
-#         'search_address' : search_address,  #запоминание ввода для поиска
-#         'classrooms' : classrooms           
-#     }
-#     #проверка наличия черновика
-#     draft_booking = GetDraftBooking()
-#     if draft_booking:
-#         context['len'] = len(draft_booking.GetClassrooms())
-#         context['draft_booking'] = draft_booking
-#     else:
-#         context['draft_booking'] = None
-
-#     return render(request, 'classrooms.html', context)
-
-
-
-# def GetEventById(request, id):
-#     """СТРАНИЦА КОРЗИНЫ"""
-#     draft_booking = GetDraftBooking(id)
-#     context = {
-#         'id': id,
-#         'event_name': draft_booking.event_name,
-#         'fio': draft_booking.creator.username,
-#         'date': draft_booking.event_date.strftime('%Y-%m-%d') if draft_booking.event_date else '',
-#         'time_start': draft_booking.start_event_time.strftime('%H:%M') if draft_booking.start_event_time else '',
-#         'classrooms': GetBooking(id),
-#         'status': draft_booking.status
-#     }
-
-#     return render(request, 'event.html', context)
-
-# def GetLongDescription(request, id):
-#     """ПОДРОБНОЕ ОПИСАНИЕ"""
-#     classroom = Classrooms.objects.get(classroom_id=id)
-#     classroom.description = classroom.description.split('t')  
-#     return render(request, 'long_description.html', { 'classroom' : classroom })
-
-
-
-# def AddClassroomToDraftBooking(request, classroom_id):
-#     """ДОБАВЛЕНИЕ АУДИТОРИИ В ЧЕРНОВИК ЗАЯВКИ"""
-#     classroom = Classrooms.objects.get(classroom_id=classroom_id)
-#     draft_booking = GetDraftBooking()
-#     if draft_booking is None:
-#         draft_booking = Applications.objects.create(
-#             created_at=timezone.now(),
-#             creator=GetCurrentUser(),
-#             status=1
-#         )
-#         draft_booking.save()
-#     if ApplicationClassrooms.objects.filter(app=draft_booking, classroom=classroom).exists():
-#         return redirect("/")
-#     ApplicationClassrooms.objects.create( 
-#         app=draft_booking,
-#         classroom=classroom
-#     )
-#     return redirect("/")
-    
-# def DeleteBooking(request, booking_id):
-#     """УДАЛЕНИЕ ЧЕРНОВИКА БРОНИРОВАНИЯ"""
-#     if request.method == "POST": 
-#         submitted_time = timezone.now()
-#         with connection.cursor() as cursor:
-#             cursor.execute(
-#                 "UPDATE Applications SET status = 2, submitted_at = %s WHERE app_id = %s",
-#                 [submitted_time, booking_id]
-#             )
-#     return redirect("/")
+    return Response(serializer.data, status=status.HTTP_201_CREATED)

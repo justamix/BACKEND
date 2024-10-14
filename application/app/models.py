@@ -21,8 +21,11 @@ class ApplicationClassrooms(models.Model):
 
 class Applications(models.Model):
     STATUS_CHOICES = (
-        (1, 'Действует'),
-        (2, 'Удалена'),
+        (1, 'Введён'),
+        (2, 'В работе'),
+        (3, 'Завершен'),
+        (4, 'Отклонен'),
+        (5, 'Удален'),
     )
     app_id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(blank=True, null=True)
