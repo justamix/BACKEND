@@ -6,7 +6,8 @@ class ApplicationsSerializer(serializers.ModelSerializer):
     creator = serializers.SerializerMethodField()
     moderator = serializers.SerializerMethodField()
     classrooms = serializers.SerializerMethodField()
-
+    classrooms_count = serializers.SerializerMethodField()
+    
     def get_creator(self, obj):
         return obj.creator.username
     
@@ -18,9 +19,12 @@ class ApplicationsSerializer(serializers.ModelSerializer):
         classrooms = ApplicationClassrooms.objects.filter(app=app)
         return ClassroomsSerializer(classrooms, many=True).data
     
+    def get_classrooms_count(self, obj):
+        return ApplicationClassrooms.objects.filter(app=obj).count()
+    
     class Meta:
         model = Applications
-        fields = "__all__"
+        fields = ['app_id', 'creator', 'moderator', 'classrooms', 'created_at', 'submitted_at', 'completed_at', 'event_date', 'event_name', 'start_event_time', 'status', 'classrooms_count']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -34,6 +38,11 @@ class ApplicationClassroomsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class ClassroomsSerializer(serializers.ModelSerializer):
+    # classrooms_count = serializers.SerializerMethodField()
+
+    # def get_classrooms_count(self, obj):
+    #     return Classrooms.objects.filter(status='active').count()
+    
     class Meta:
         model = Classrooms
         fields = "__all__"
@@ -44,7 +53,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'email', 'password', 'first_name', 'last_name', 'username')
         write_only_fields = ('password',)
-        read_only_fields = ('id',)
+        read_only_fields = ('id',)  
 
     def create(self, validated_data):
             user = User.objects.create(

@@ -42,7 +42,8 @@ def search_classrooms(request):
     draft = GetDraftBooking()
     response = {
         "classrooms" : serializer.data,
-        "draft_event" : draft.app_id if draft else None
+        "draft_event" : draft.app_id if draft else None,
+        "classrooms_count" : classrooms.count()
     }
     return Response(response)
 #2
@@ -273,7 +274,7 @@ def register(request):
     serializer = UserRegisterSerializer(data=request.data)
 
     if not serializer.is_valid():
-        return Response(status=status.HTTP_409_CONFLICT)
+        return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
 
     user = serializer.save()
 
