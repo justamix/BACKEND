@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import *
 
+
 urlpatterns = [
     # Набор методов для услуг
     path('api/classrooms/search/', search_classrooms),  # 1 GET список с фильтрацией
@@ -18,9 +19,11 @@ urlpatterns = [
     path('api/events/<int:event_id>/update_status_admin/', update_status_admin),  # 12 PUT завершить/отклонить модератором
     path('api/events/<int:event_id>/delete/', delete_event),  # 13 DELETE удаление (дата формирования)
     # Набор методов для м-м
-    path('api/events/<int:event_id>/update_classroom/<int:classroom_id>/', update_classroom_in_event),  # PUT изменение количества/порядка/значения в м-м
-    path('api/events/<int:event_id>/delete_classroom/<int:classroom_id>/', delete_classroom_from_event),  # DELETE  удаление из заявки (без PK м-м)
+    path('api/events/<int:event_id>/update_classroom/<int:classroom_id>/', update_classroom_in_event),  # 14 PUT изменение количества/порядка/значения в м-м
+    path('api/events/<int:event_id>/delete_classroom/<int:classroom_id>/', delete_classroom_from_event),  # 15 DELETE  удаление из заявки (без PK м-м)
     # Набор методов пользователей
-    path('api/users/<int:user_id>/update/', update_user), # PUT пользователя (личный кабинет)
-    path('api/users/register/', register), # POST регистрация
+    path('api/users/<int:user_id>/update/', update_user), # 16 PUT пользователя (личный кабинет)
+    path("api/users/register/", register),  # 17 POST регистрация 
+    path("api/users/logout/", logout),  # 18 POST выход из системы
+    path("api/users/login/", login),  # 19 POST вход в систему
 ]

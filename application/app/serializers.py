@@ -1,11 +1,12 @@
 from rest_framework import serializers
 from .models import *
 from django.contrib.auth.models import User
+from collections import OrderedDict
+
 
 class ApplicationsSerializer(serializers.ModelSerializer):
     creator = serializers.SerializerMethodField()
     moderator = serializers.SerializerMethodField()
-    classrooms = serializers.SerializerMethodField()
     classrooms_count = serializers.SerializerMethodField()
     
     def get_creator(self, obj):
@@ -24,7 +25,7 @@ class ApplicationsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Applications
-        fields = ['app_id', 'creator', 'moderator', 'classrooms', 'created_at', 'submitted_at', 'completed_at', 'event_date', 'event_name', 'start_event_time', 'status', 'classrooms_count']
+        fields = ['app_id', 'creator', 'moderator',  'created_at', 'submitted_at', 'completed_at', 'event_date', 'event_name', 'start_event_time', 'status', 'classrooms_count']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -47,6 +48,13 @@ class ClassroomsSerializer(serializers.ModelSerializer):
         model = Classrooms
         fields = "__all__"
 
+    def get_fields(self):
+            new_fields = OrderedDict()
+            for name, field in super().get_fields().items():
+                field.required = False
+                new_fields[name] = field
+            return new_fields 
+
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,3 +73,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             user.set_password(validated_data['password'])
             user.save()
             return user
+
+class UserLoginSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
