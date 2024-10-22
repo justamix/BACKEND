@@ -139,3 +139,8 @@ JWT = {
     "ALGORITHM": "HS256",
     "SIGNING_KEY": "MY_SIGNING_KEY_123",
 }
+
+
+
+REDIS_HOST = 'redis'
+REDIS_PORT = 6379

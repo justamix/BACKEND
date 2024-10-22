@@ -5,12 +5,13 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-
+import redis
 from .jwt_helper import *
 from .permissions import *
 from .serializers import *
 from .utils import identity_user
 
+session_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
 def GetDraftBooking(request, id=None):
     """ПОЛУЧЕНИЕ ЧЕРНОВИКА ЗАЯВКИ"""
@@ -291,11 +292,11 @@ def register(request):
     access_token = create_access_token(user.id)
 
     serializer = UserSerializer(user)
-
+    username = str(request.data["username"]) 
     response = Response(serializer.data, status=status.HTTP_201_CREATED)
     
     response.set_cookie('access_token', access_token, httponly=True)
-
+    session_storage.set(access_token, username)
     return response
 #18
 @swagger_auto_schema(method='post', request_body=UserLoginSerializer)
@@ -313,9 +314,9 @@ def login(request):
     access_token = create_access_token(user.id)
 
     serializer = UserSerializer(user)
-
+    username = str(request.data["username"]) 
     response = Response(serializer.data, status=status.HTTP_201_CREATED)
-
+    session_storage.set(access_token, username)
     response.set_cookie('access_token', access_token, httponly=True)
 
     return response
