@@ -16,28 +16,10 @@ def GetDraftBooking(request, id=None):
     """ПОЛУЧЕНИЕ ЧЕРНОВИКА ЗАЯВКИ"""
     current_user = identity_user(request)
     if id is not None:
-        return Applications.objects.filter(creator=current_user.id, app_id=id).first() 
+        return Applications.objects.filter(creator=current_user, app_id=id).first() 
     else:
-        return Applications.objects.filter(creator=current_user.id, status=1).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
-# def GetUser():
-#     """ВЫБОР ПОЛЬЗОВАТЕЛЯ"""
-#     return User.objects.filter(is_superuser=False).first()
-# def get_moderator():
-#     return User.objects.filter(is_superuser=True).first()
-# def GetBooking(request, id):
-#     """Информация об аудиториях в бронировании"""
-#     draft_booking = GetDraftBooking(request, id)
-#     # Получаем все аудитории, связанные с черновиком заявки
-#     application_classrooms = ApplicationClassrooms.objects.filter(app=draft_booking)
-#     classrooms = []
-#     for item in application_classrooms:
-#         classroom = {
-#             'info': Classrooms.objects.get(classroom_id=item.classroom_id),  # Получаем объект аудитории
-#             'finish_time': item.finish_time.strftime('%H:%M') if item.finish_time else ''# Время окончания
-#         }
-#         classrooms.append(classroom)
-#     return classrooms
-#1
+        return Applications.objects.filter(creator=current_user, status=1).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
+
 @api_view(["GET"])
 def search_classrooms(request):
     query = request.data.get("name", "")
@@ -110,7 +92,7 @@ def add_classroom_to_event(request, classroom_id):
     if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     classroom = Classrooms.objects.get(classroom_id=classroom_id)
-    draft_booking = GetDraftBooking()
+    draft_booking = GetDraftBooking(request)
     if draft_booking is None:
         draft_booking = Applications.objects.create()
         draft_booking.creator = identity_user(request)
