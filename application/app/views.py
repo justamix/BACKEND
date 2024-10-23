@@ -1,10 +1,12 @@
 import requests
+from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response 
+from .miniof import delete_pic, add_pic
 
 from .serializers import *
 
@@ -117,15 +119,14 @@ def add_classroom_to_event(request, classroom_id):
 #7
 @api_view(["POST"])
 def update_classroom_image(request, classroom_id):
-    if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    classroom = Classrooms.objects.get(classroom_id=classroom_id)
-    image = request.data.get("image")
-    if image is not None:
-        classroom.url = image
-        classroom.save()
+    classroom = get_object_or_404(Classrooms, classroom_id = classroom_id)
+    delete_pic(classroom) 
+    new_pic = request.FILES.get('url')
     serializer = ClassroomsSerializer(classroom)
-    return Response(serializer.data)
+    pic_result = add_pic(classroom, new_pic)
+    if 'error' in pic_result.data:
+        return pic_result
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 #8
 @api_view(["GET"])
 def events_list(request):

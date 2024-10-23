@@ -133,3 +133,10 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+AWS_STORAGE_BUCKET_NAME = 'logo'
+AWS_ACCESS_KEY_ID = 'admin2004'
+AWS_SECRET_ACCESS_KEY = 'admin2004'
+AWS_S3_ENDPOINT_URL = 'minio:9000'
+MINIO_USE_SSL = False
