@@ -37,6 +37,7 @@ class Applications(models.Model):
     event_name = models.CharField(default='конференция', max_length=100, blank=True, null=True)
     start_event_time = models.TimeField(default=time(12, 0), blank=True, null=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=1,blank=True, null=True)
+    held_an_event = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = True

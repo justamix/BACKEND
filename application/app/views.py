@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.utils.dateparse import parse_datetime
+from django.core.cache import cache
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -10,8 +11,8 @@ from .jwt_helper import *
 from .permissions import *
 from .serializers import *
 from .utils import identity_user
-
-session_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+from .miniof import *
+from random import randint
 
 def GetDraftBooking(request, id=None):
     """ПОЛУЧЕНИЕ ЧЕРНОВИКА ЗАЯВКИ"""
@@ -198,6 +199,10 @@ def update_status_admin(request, event_id):
     app = Applications.objects.get(app_id=event_id)
     if app.status == 2:
         app.completed_at = timezone.now()
+        #рассчетное поле
+        if stat == 3:
+            app.held_an_event = True if randint(1, 2) == 1 else False
+        
         app.status = stat
         app.moderator = identity_user(request)
         app.save()
@@ -294,8 +299,7 @@ def register(request):
     username = str(request.data["username"]) 
     response = Response(serializer.data, status=status.HTTP_201_CREATED)
     
-    response.set_cookie('access_token', access_token, httponly=True)
-    session_storage.set(access_token, username)
+    response.set_cookie('session_id', access_token, httponly=True)
     return response
 #18
 @swagger_auto_schema(method='post', request_body=UserLoginSerializer)
@@ -315,8 +319,7 @@ def login(request):
     serializer = UserSerializer(user)
     username = str(request.data["username"]) 
     response = Response(serializer.data, status=status.HTTP_201_CREATED)
-    session_storage.set(access_token, username)
-    response.set_cookie('access_token', access_token, httponly=True)
+    response.set_cookie('session_id', access_token, httponly=True)
 
     return response
 #19
@@ -326,7 +329,9 @@ def logout(request):
     access_token = get_access_token(request)
 
     if access_token not in cache:
-        cache.set(access_token, settings.JWT["ACCESS_TOKEN_LIFETIME"])
+        payload = get_jwt_payload(access_token)
+        user_id = payload.get("user_id")
+        cache.set(access_token, user_id, timeout=settings.JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
 
     return Response(status=status.HTTP_200_OK)
 
@@ -336,7 +341,6 @@ def logout(request):
 def update_user(request, user_id):
     if not User.objects.filter(pk=user_id).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
-
     user = identity_user(request)
 
     if user.pk != user_id:

@@ -140,7 +140,15 @@ JWT = {
     "SIGNING_KEY": "MY_SIGNING_KEY_123",
 }
 
-
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://redis",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+        },
+    }
+}
 
 REDIS_HOST = 'redis'
 REDIS_PORT = 6379

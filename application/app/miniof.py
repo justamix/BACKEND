@@ -4,7 +4,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework.response import *
 import logging
 
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)
 
 def process_file_upload(file_object: InMemoryUploadedFile, client, image_name):
     try:
