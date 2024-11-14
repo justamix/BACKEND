@@ -21,26 +21,40 @@ session_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDI
 
 def GetDraftBooking(request, id=None):
     """ПОЛУЧЕНИЕ ЧЕРНОВИКА ЗАЯВКИ"""
-    username = session_storage.get(request.COOKIES["session_id"])
+    session_id = request.COOKIES.get("session_id")
+    if not session_id:
+        return None  # возвращаем None, если session_id отсутствует
+
+    username = session_storage.get(session_id)
+    if not username:
+        return None  # возвращаем None, если пользователь не найден в сессии
+
     username = username.decode('utf-8')
-    current_user = User.objects.get(username=username)
+    try:
+        current_user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return None  # возвращаем None, если пользователь не найден в базе данных
+
     if id is not None:
         return Applications.objects.filter(creator=current_user, app_id=id).first() 
     else:
-        return Applications.objects.filter(creator=current_user, status=1).first() #так как у пользователя только один черновик, то берем первый элемент, иначе None
+        return Applications.objects.filter(creator=current_user, status=1).first()  # возвращаем первый черновик или None
 
+# Представление для поиска классов
 @api_view(["GET"])
 def search_classrooms(request):
     query = request.query_params.get("name", "")
     classrooms = Classrooms.objects.filter(status='active', name__icontains=query)
     serializer = ClassroomsSerializer(classrooms, many=True)
-    draft = GetDraftBooking(request)
-    if draft:
-        draft_count = ApplicationClassrooms.objects.filter(app=draft.app_id)
+    
+    # Проверяем, что пользователь аутентифицирован
+    draft = GetDraftBooking(request) if request.user.is_authenticated else None
+    draft_count = ApplicationClassrooms.objects.filter(app=draft.app_id).count() if draft else None
+
     response = {
-        "classrooms" : serializer.data,
-        "draft_event" : draft.app_id if draft else None,
-        "classrooms_count" : draft_count.count() if draft else None
+        "classrooms": serializer.data,
+        "draft_event": draft.app_id if draft else None,
+        "classrooms_count": draft_count
     }
     return Response(response)
 #2
