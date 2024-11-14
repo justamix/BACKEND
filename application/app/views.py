@@ -6,17 +6,24 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from django.http import HttpResponse
+from django.contrib.auth import authenticate, login, logout
 import redis
-from .jwt_helper import *
+import uuid
+from rest_framework.permissions import IsAuthenticated
 from .permissions import *
 from .serializers import *
-from .utils import identity_user
 from .miniof import *
 from random import randint
 
+
+session_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+
 def GetDraftBooking(request, id=None):
     """ПОЛУЧЕНИЕ ЧЕРНОВИКА ЗАЯВКИ"""
-    current_user = identity_user(request)
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    current_user = User.objects.get(username=username)
     if id is not None:
         return Applications.objects.filter(creator=current_user, app_id=id).first() 
     else:
@@ -24,14 +31,16 @@ def GetDraftBooking(request, id=None):
 
 @api_view(["GET"])
 def search_classrooms(request):
-    query = request.data.get("name", "")
+    query = request.query_params.get("name", "")
     classrooms = Classrooms.objects.filter(status='active', name__icontains=query)
     serializer = ClassroomsSerializer(classrooms, many=True)
     draft = GetDraftBooking(request)
+    if draft:
+        draft_count = ApplicationClassrooms.objects.filter(app=draft.app_id)
     response = {
         "classrooms" : serializer.data,
         "draft_event" : draft.app_id if draft else None,
-        "classrooms_count" : classrooms.count()
+        "classrooms_count" : draft_count.count() if draft else None
     }
     return Response(response)
 #2
@@ -97,7 +106,10 @@ def add_classroom_to_event(request, classroom_id):
     draft_booking = GetDraftBooking(request)
     if draft_booking is None:
         draft_booking = Applications.objects.create()
-        draft_booking.creator = identity_user(request)
+        username = session_storage.get(request.COOKIES["session_id"])
+        username = username.decode('utf-8')
+        user = User.objects.get(username=username)
+        draft_booking.creator = user
         draft_booking.created_at = timezone.now()
         draft_booking.save()
     if ApplicationClassrooms.objects.filter(app=draft_booking, classroom=classroom).exists():
@@ -130,7 +142,9 @@ def events_list(request):
     date_formation_end = request.GET.get("date_formation_end")
 
     apps = Applications.objects.all()
-    user = identity_user(request)
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    user = User.objects.get(username=username)
 
     if not user.is_staff:
         apps = apps.filter(creator=user)
@@ -150,7 +164,9 @@ def events_list(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_event_by_id(request, event_id):
-    user = identity_user(request)
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    user = User.objects.get(username=username)
     if not Applications.objects.filter(app_id=event_id, creator=user).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     app = Applications.objects.get(app_id=event_id, creator=user)
@@ -161,7 +177,9 @@ def get_event_by_id(request, event_id):
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_event_by_id(request, event_id):
-    user = identity_user(request)
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    user = User.objects.get(username=username)
     if not Applications.objects.filter(app_id=event_id, creator=user).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     app = Applications.objects.get(app_id=event_id, creator=user)
@@ -174,7 +192,9 @@ def update_event_by_id(request, event_id):
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_status_user(request, event_id):
-    user = identity_user(request)
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    user = User.objects.get(username=username)
     if not Applications.objects.filter(app_id=event_id, creator=user).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     app = Applications.objects.get(app_id=event_id, creator=user)
@@ -204,7 +224,10 @@ def update_status_admin(request, event_id):
             app.held_an_event = True if randint(1, 2) == 1 else False
         
         app.status = stat
-        app.moderator = identity_user(request)
+        username = session_storage.get(request.COOKIES["session_id"])
+        username = username.decode('utf-8')
+        user = User.objects.get(username=username)
+        app.moderator = user
         app.save()
         serializer = ApplicationsSerializer(app, many=False)
         return Response(serializer.data)
@@ -214,7 +237,9 @@ def update_status_admin(request, event_id):
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
 def delete_event(request, event_id):
-    user = identity_user(request)
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    user = User.objects.get(username=username)
     if not Applications.objects.filter(app_id=event_id, creator=user).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     app = Applications.objects.get(app_id=event_id, creator=user)
@@ -229,7 +254,9 @@ def delete_event(request, event_id):
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_classroom_in_event(request, event_id, classroom_id):
-    user = identity_user(request)
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    user = User.objects.get(username=username)
     if not Applications.objects.filter(app_id=event_id, creator=user).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     if not ApplicationClassrooms.objects.filter(app_id=event_id, classroom_id=classroom_id).exists():
@@ -252,7 +279,9 @@ def update_classroom_in_event(request, event_id, classroom_id):
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
 def delete_classroom_from_event(request, event_id, classroom_id):
-    user = identity_user(request)
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    user = User.objects.get(username=username)
     if not Applications.objects.filter(app_id=event_id, creator=user).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
     if not ApplicationClassrooms.objects.filter(app_id=event_id, classroom_id=classroom_id).exists():
@@ -266,83 +295,19 @@ def delete_classroom_from_event(request, event_id, classroom_id):
         app.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(classrooms)
+
+
 #16
-@swagger_auto_schema(method='put', request_body=UserSerializer)
-@api_view(["PUT"])
-def update_user(request, user_id):
-    if not User.objects.filter(pk=user_id).exists():
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    user = User.objects.get(pk=user_id)
-    serializer = UserSerializer(user, data=request.data, many=False, partial=True)
-
-    if not serializer.is_valid():
-        return Response(status=status.HTTP_409_CONFLICT)
-
-    serializer.save()
-
-    return Response(serializer.data)
-#17
-@swagger_auto_schema(method='post', request_body=UserRegisterSerializer)
-@api_view(["POST"])
-def register(request):
-    serializer = UserRegisterSerializer(data=request.data)
-
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
-
-    user = serializer.save()
-
-    access_token = create_access_token(user.id)
-
-    serializer = UserSerializer(user)
-    username = str(request.data["username"]) 
-    response = Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    response.set_cookie('session_id', access_token, httponly=True)
-    return response
-#18
-@swagger_auto_schema(method='post', request_body=UserLoginSerializer)
-@api_view(["POST"])
-def login(request):
-    serializer = UserLoginSerializer(data=request.data)
-
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-
-    user = authenticate(**serializer.data)
-    if user is None:
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
-
-    access_token = create_access_token(user.id)
-
-    serializer = UserSerializer(user)
-    username = str(request.data["username"]) 
-    response = Response(serializer.data, status=status.HTTP_201_CREATED)
-    response.set_cookie('session_id', access_token, httponly=True)
-
-    return response
-#19
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def logout(request):
-    access_token = get_access_token(request)
-
-    if access_token not in cache:
-        payload = get_jwt_payload(access_token)
-        user_id = payload.get("user_id")
-        cache.set(access_token, user_id, timeout=settings.JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
-
-    return Response(status=status.HTTP_200_OK)
-
 @swagger_auto_schema(method='PUT', request_body=UserSerializer)
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_user(request, user_id):
+    username = session_storage.get(request.COOKIES["session_id"])
+    username = username.decode('utf-8')
+    user = User.objects.get(username=username)
     if not User.objects.filter(pk=user_id).exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
-    user = identity_user(request)
-
+    
     if user.pk != user_id:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -353,3 +318,59 @@ def update_user(request, user_id):
     serializer.save()
 
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+#17
+@swagger_auto_schema(method='post', request_body=UserRegisterSerializer)
+@api_view(["POST"])
+def register(request): 
+    try:
+        if request.COOKIES["session_id"] is not None:
+            return Response({'status': 'Уже в системе'}, status=status.HTTP_403_FORBIDDEN)
+    except:
+        if User.objects.filter(username = request.data['username']).exists(): 
+            return Response({'status': 'Exist'}, status=400)
+        serializer = UserRegisterSerializer(data=request.data) 
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#18
+@swagger_auto_schema(method='post', request_body=UserLoginSerializer)
+@api_view(["POST"])
+def login(request):
+    try:
+        if request.COOKIES["session_id"] is not None:
+            return Response({'status': 'Уже в системе'}, status=status.HTTP_403_FORBIDDEN)
+    except:
+        username = str(request.data["username"]) 
+        password = request.data["password"]
+        user = authenticate(request, username=username, password=password)
+        logger.error(user)
+        if user is not None:
+            random_key = str(uuid.uuid4()) 
+            session_storage.set(random_key, username)
+
+            response = Response({'status': f'{username} успешно вошел в систему'})
+            response.set_cookie("session_id", random_key)
+
+            return response
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    
+#19
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    try:
+        username = session_storage.get(request.COOKIES["session_id"])
+        username = username.decode('utf-8')
+        logout(request._request)
+        response = Response({'Message': f'{username} вышел из системы'})
+        response.delete_cookie('session_id')
+        return response
+    except:
+        return Response({"Message":"Нет авторизованных пользователей"})
+
