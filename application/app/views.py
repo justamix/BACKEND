@@ -48,7 +48,7 @@ def search_classrooms(request):
     serializer = ClassroomsSerializer(classrooms, many=True)
     
     # Проверяем, что пользователь аутентифицирован
-    draft = GetDraftBooking(request) if request.user.is_authenticated else None
+    draft = GetDraftBooking(request) if request.COOKIES.get("session_id") else None
     draft_count = ApplicationClassrooms.objects.filter(app=draft.app_id).count() if draft else None
 
     response = {
@@ -112,7 +112,6 @@ def delete_classroom(request, classroom_id):
 #6
 @swagger_auto_schema(method='post', request_body=ApplicationsSerializer)
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
 def add_classroom_to_event(request, classroom_id):
     try:
         if not Classrooms.objects.filter(classroom_id=classroom_id).exists():
@@ -155,7 +154,6 @@ def update_classroom_image(request, classroom_id):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 #8
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def events_list(request):
     try:
         status = int(request.GET.get("status", 0))
@@ -185,7 +183,6 @@ def events_list(request):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 #9
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def get_event_by_id(request, event_id):
     try:
         username = session_storage.get(request.COOKIES["session_id"])
@@ -202,7 +199,6 @@ def get_event_by_id(request, event_id):
 #10
 @swagger_auto_schema(method='put', request_body=ApplicationsSerializer)
 @api_view(["PUT"])
-@permission_classes([IsAuthenticated])
 def update_event_by_id(request, event_id):
     try:
         username = session_storage.get(request.COOKIES["session_id"])
@@ -220,7 +216,6 @@ def update_event_by_id(request, event_id):
 #11
 @swagger_auto_schema(method='put', request_body=ApplicationsSerializer)
 @api_view(["PUT"])
-@permission_classes([IsAuthenticated])
 def update_status_user(request, event_id):
     try:
         username = session_storage.get(request.COOKIES["session_id"])
@@ -272,7 +267,6 @@ def update_status_admin(request, event_id):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 #13
 @api_view(["DELETE"])
-@permission_classes([IsAuthenticated])
 def delete_event(request, event_id):
     try:
         username = session_storage.get(request.COOKIES["session_id"])
@@ -292,7 +286,6 @@ def delete_event(request, event_id):
 #14
 @swagger_auto_schema(method='put', request_body=ApplicationClassroomsSerializer)
 @api_view(["PUT"])
-@permission_classes([IsAuthenticated])
 def update_classroom_in_event(request, event_id, classroom_id):
     try:
         username = session_storage.get(request.COOKIES["session_id"])
@@ -320,7 +313,6 @@ def update_classroom_in_event(request, event_id, classroom_id):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 #15
 @api_view(["DELETE"])
-@permission_classes([IsAuthenticated])
 def delete_classroom_from_event(request, event_id, classroom_id):
     try:
         username = session_storage.get(request.COOKIES["session_id"])
@@ -345,24 +337,26 @@ def delete_classroom_from_event(request, event_id, classroom_id):
 #16
 @swagger_auto_schema(method='PUT', request_body=UserSerializer)
 @api_view(["PUT"])
-@permission_classes([IsAuthenticated])
 def update_user(request, user_id):
-    username = session_storage.get(request.COOKIES["session_id"])
-    username = username.decode('utf-8')
-    user = User.objects.get(username=username)
-    if not User.objects.filter(pk=user_id).exists():
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    
-    if user.pk != user_id:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    try:
+        username = session_storage.get(request.COOKIES["session_id"])
+        username = username.decode('utf-8')
+        user = User.objects.get(username=username)
+        if not User.objects.filter(pk=user_id).exists():
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        if user.pk != user_id:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-    serializer = UserSerializer(user, data=request.data, partial=True)
-    if not serializer.is_valid():
-        return Response(status=status.HTTP_409_CONFLICT)
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_409_CONFLICT)
 
-    serializer.save()
+        serializer.save()
 
-    return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 #17
@@ -407,7 +401,6 @@ def login(request):
     
 #19
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
 def logout(request):
     try:
         username = session_storage.get(request.COOKIES["session_id"])
